@@ -329,10 +329,10 @@ export default function BillingDashboard() {
                                 <th className="p-3 pl-6">Item</th>
                                 <th className="p-3">Article</th>
                                 <th className="p-3">Description</th>
-                                <th className="p-3 text-right">Rcv Qty</th>
+                                <th className="p-3 text-right">Rev. Qty</th>
                                 <th className="p-3 text-right">Unit Cost</th>
                                 <th className="p-3 text-right">MRP</th>
-                                <th className="p-3 text-right pr-6">Total</th>
+                                <th className="p-3 text-right pr-6">Cost</th>
                               </>
                             ) : (
                               <>

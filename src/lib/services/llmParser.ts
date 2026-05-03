@@ -125,7 +125,7 @@ export async function parseWithLLM(pdfBuffer: Buffer): Promise<any> {
 
     STAR Goods Receipt Slip:
     - Header: grn_no, grn_date, current_date, plant_code, plant_description, plant_name, company_pan, gstn, vendor_code, vendor_name, vendor_address, supply_state, delivery_note, vendor_inv_no, po_number, header_text, movement_type.
-    - Items: Item → item_no, Article → article_no, Rev. Qty → qty, Cost → total_amount, tax fields (CGST, SGST, CESS).
+    - Items: Item → item_no, Article → article_no, Rev. Qty → qty, Unit Cost → cost_per_unit, MRP → mrp, Cost → total_amount, tax fields (CGST, SGST, CESS).
     - Root total_amount = the printed "Cost" column total row value.
 
     ZEPTO Invoice/Challan:

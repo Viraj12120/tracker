@@ -99,11 +99,11 @@ export default function BillDetailPage() {
                            <th className="pb-4">Article</th>
                            <th className="pb-4">HSN</th>
                            <th className="pb-4">Description</th>
-                           <th className="pb-4 text-right">Rcv Qty</th>
+                           <th className="pb-4 text-right">Rev. Qty</th>
                            <th className="pb-4 text-right">Unit Cost</th>
                            <th className="pb-4 text-right">CGST</th>
                            <th className="pb-4 text-right">SGST</th>
-                           <th className="pb-4 text-right">Total</th>
+                           <th className="pb-4 text-right">Cost</th>
                          </>
                        ) : (
                          <>

@@ -29,6 +29,17 @@ export default function BillDetailPage() {
   if (loading) return <div className="p-20 text-center font-bold text-slate-300">Loading...</div>;
   if (!bill) return <div className="p-20 text-center font-bold text-slate-300">Not found</div>;
 
+  const formatDate = (dateStr: any) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-GB').replace(/\//g, '.');
+      }
+    } catch (e) {}
+    return String(dateStr).split('T')[0];
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans p-8 md:p-20">
       <div className="max-w-4xl mx-auto">
@@ -45,7 +56,7 @@ export default function BillDetailPage() {
              }`}>
                 {bill.company}
              </span>
-             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{bill.grn_date || bill.challan_date}</span>
+             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{formatDate(bill.grn_date || bill.challan_date)}</span>
           </div>
           <h1 className="text-5xl font-black tracking-tighter mb-4 text-slate-900">
             {bill.grn_no || bill.challan_no}

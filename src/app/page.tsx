@@ -176,13 +176,15 @@ export default function BillingDashboard() {
 
   const formatDate = (dateStr: any) => {
     if (!dateStr) return '-';
-    if (typeof dateStr === 'number' || (!isNaN(Date.parse(dateStr)) && !isNaN(new Number(dateStr) as any))) {
-       const d = new Date(Number(dateStr));
-       if (!isNaN(d.getTime())) {
-          return d.toLocaleDateString('en-GB').replace(/\//g, '.');
-       }
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-GB').replace(/\//g, '.');
+      }
+    } catch (e) {
+      console.error('Date formatting error:', e);
     }
-    return dateStr;
+    return String(dateStr).split('T')[0];
   };
 
   return (

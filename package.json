@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:prod": "cross-env NODE_ENV=production npx knex migrate:latest --knexfile ./knexfile.js"
+    "migrate:prod": "cross-env NODE_ENV=production npx knex migrate:latest --knexfile ./knexfile.js",
+    "migrate:dev": "npx knex migrate:latest --knexfile ./knexfile.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

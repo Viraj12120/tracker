@@ -5,11 +5,11 @@ module.exports = {
   development: {
     client: 'sqlite3',
     connection: {
-      filename: path.join(__dirname, 'data', 'billing.db'),
+      filename: path.join(process.cwd(), 'data', 'billing.db'),
     },
     useNullAsDefault: true,
     migrations: {
-      directory: path.join(__dirname, 'src', 'lib', 'db', 'migrations'),
+      directory: path.join(process.cwd(), 'src', 'lib', 'db', 'migrations'),
     },
   },
   production: {
@@ -20,7 +20,7 @@ module.exports = {
     },
     useNullAsDefault: true,
     migrations: {
-      directory: path.join(__dirname, 'src', 'lib', 'db', 'migrations'),
+      directory: path.join(process.cwd(), 'src', 'lib', 'db', 'migrations'),
     },
   },
 };

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  Search, 
-  Plus, 
-  CheckCircle, 
+import {
+  Upload,
+  FileText,
+  Search,
+  Plus,
+  CheckCircle,
   ArrowRight,
   Trash,
   Download,
@@ -33,7 +33,7 @@ export default function BillingDashboard() {
   const [search, setSearch] = useState('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [modal, setModal] = useState<{isOpen: boolean, message: string, type: 'error' | 'success'}>({isOpen: false, message: '', type: 'error'});
+  const [modal, setModal] = useState<{ isOpen: boolean, message: string, type: 'error' | 'success' }>({ isOpen: false, message: '', type: 'error' });
   const [uploadQueue, setUploadQueue] = useState<File[]>([]);
   const [totalUploads, setTotalUploads] = useState(0);
   const isSyncingRef = useRef(false);
@@ -93,10 +93,10 @@ export default function BillingDashboard() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     if (isUploadingRef.current) return;
-    
+
     const files = Array.from(e.target.files);
     setTotalUploads(files.length);
-    
+
     processFile(files[0], files.slice(1));
   };
 
@@ -104,10 +104,10 @@ export default function BillingDashboard() {
     setUploadQueue(queue);
     isUploadingRef.current = true;
     setIsUploading(true);
-    
+
     const formData = new FormData();
     formData.append('file', file);
-    
+
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const result = await res.json();
@@ -190,19 +190,19 @@ export default function BillingDashboard() {
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans pb-20 selection:bg-slate-200">
       <div className="max-w-6xl mx-auto px-6 py-12">
-        
+
         {/* Header & Global Search */}
         <header className="flex flex-col md:flex-row items-center justify-between mb-12 gap-8">
           <div>
             <h1 className="text-4xl font-black tracking-tight text-slate-900">Tracker</h1>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Archive System v2.0</p>
           </div>
-          
+
           <div className="flex-1 max-w-md w-full relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search records..." 
+            <input
+              type="text"
+              placeholder="Search records..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-slate-100 transition-all outline-none"
@@ -210,170 +210,170 @@ export default function BillingDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-             <button 
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="flex items-center gap-2 px-8 py-3.5 text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
-              >
-                {isSyncing ? <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" /> : <RefreshCw size={18} />}
-                Sync Gmail
-              </button>
-             <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-8 py-3.5 text-sm font-black text-white bg-slate-900 rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-200"
-              >
-                {isUploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus size={18} />}
-                Process New
-              </button>
-              <input type="file" multiple ref={fileInputRef} onChange={handleFileUpload} accept=".pdf" className="hidden" />
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-8 py-3.5 text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
+            >
+              {isSyncing ? <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" /> : <RefreshCw size={18} />}
+              Sync Gmail
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-8 py-3.5 text-sm font-black text-white bg-slate-900 rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-200"
+            >
+              {isUploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus size={18} />}
+              Process New
+            </button>
+            <input type="file" multiple ref={fileInputRef} onChange={handleFileUpload} accept=".pdf" className="hidden" />
           </div>
         </header>
 
         {/* Monochromatic KPI Cards */}
         <div className={`grid grid-cols-1 ${activeTab === 'AMAZON' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-12`}>
-           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Total Records</p>
-              <p className="text-3xl font-black tracking-tighter">{stats.total_bills || 0} <span className="text-sm font-bold text-slate-300">BILLS</span></p>
-           </div>
-           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Amount Accumulated</p>
-              <p className="text-3xl font-black tracking-tighter">₹{(stats.total_amount || 0).toLocaleString('en-IN')}</p>
-           </div>
-           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
-              <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Weight Processed</p>
-              <p className="text-3xl font-black tracking-tighter">{(stats.total_weight || 0).toLocaleString('en-IN')} <span className="text-sm font-bold text-slate-300">KG</span></p>
-           </div>
-           {activeTab === 'AMAZON' && (
-             <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-2xl shadow-slate-200 flex flex-col justify-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Kesar Pieces</p>
-                <p className="text-3xl font-black tracking-tighter">{stats.kesar_qty || 0} <span className="text-sm font-bold text-slate-400">PCS</span></p>
-             </div>
-           )}
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Total Records</p>
+            <p className="text-3xl font-black tracking-tighter">{stats.total_bills || 0} <span className="text-sm font-bold text-slate-300">BILLS</span></p>
+          </div>
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Amount Accumulated</p>
+            <p className="text-3xl font-black tracking-tighter">₹{(stats.total_amount || 0).toLocaleString('en-IN')}</p>
+          </div>
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Weight Processed</p>
+            <p className="text-3xl font-black tracking-tighter">{(stats.total_weight || 0).toLocaleString('en-IN')} <span className="text-sm font-bold text-slate-300">KG</span></p>
+          </div>
+          {activeTab === 'AMAZON' && (
+            <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-2xl shadow-slate-200 flex flex-col justify-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Kesar Pieces</p>
+              <p className="text-3xl font-black tracking-tighter">{stats.kesar_qty || 0} <span className="text-sm font-bold text-slate-400">PCS</span></p>
+            </div>
+          )}
         </div>
 
         {/* AI Review */}
         {uploadData && (
           <div className="mb-12 bg-white rounded-[3rem] border border-slate-200 shadow-2xl shadow-slate-100/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
-                    <CheckCircle className="text-slate-900" size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900">
-                      Verification {totalUploads > 1 ? `(${totalUploads - uploadQueue.length} of ${totalUploads})` : ''}
-                    </h2>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{uploadData.company} System Detected</p>
-                  </div>
-               </div>
-               <div className="flex items-center gap-3">
-                  <button onClick={() => handleNextInQueue()} className="px-6 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-900">
-                    {uploadQueue.length > 0 ? 'Skip to Next' : 'Discard'}
-                  </button>
-                  <button onClick={confirmUpload} className="px-8 py-2.5 text-sm font-black text-white bg-slate-900 rounded-xl hover:bg-black transition-all shadow-lg shadow-slate-100">
-                    {uploadQueue.length > 0 ? 'Confirm & Next' : 'Confirm & Save'}
-                  </button>
-               </div>
-             </div>
+            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
+                  <CheckCircle className="text-slate-900" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">
+                    Verification {totalUploads > 1 ? `(${totalUploads - uploadQueue.length} of ${totalUploads})` : ''}
+                  </h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{uploadData.company} System Detected</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => handleNextInQueue()} className="px-6 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-900">
+                  {uploadQueue.length > 0 ? 'Skip to Next' : 'Discard'}
+                </button>
+                <button onClick={confirmUpload} className="px-8 py-2.5 text-sm font-black text-white bg-slate-900 rounded-xl hover:bg-black transition-all shadow-lg shadow-slate-100">
+                  {uploadQueue.length > 0 ? 'Confirm & Next' : 'Confirm & Save'}
+                </button>
+              </div>
+            </div>
 
-             <div className="p-8 space-y-8">
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                  {[
-                    { key: 'vendor_name', label: 'Vendor' },
-                    { key: 'po_number', label: 'PO Number' },
-                    { key: 'grn_no', label: 'Reference No' },
-                    { key: 'total_amount', label: 'Total Amount' }
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{f.label}</label>
-                      <input 
-                        type="text" 
-                        value={uploadData[f.key] || ''} 
-                        onChange={e => setUploadData({...uploadData, [f.key]: e.target.value})}
-                        className="w-full bg-slate-50 border border-transparent rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-slate-200 outline-none transition-all"
-                      />
-                    </div>
-                  ))}
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Vendor Address</label>
-                    <textarea 
-                      value={uploadData.vendor_address || ''}
-                      onChange={e => setUploadData({...uploadData, vendor_address: e.target.value})}
-                      className="w-full bg-slate-50 border border-transparent rounded-xl p-3 text-xs font-medium h-20 outline-none focus:bg-white focus:border-slate-200 transition-all resize-none"
+            <div className="p-8 space-y-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                {[
+                  { key: 'vendor_name', label: 'Vendor' },
+                  { key: 'po_number', label: 'PO Number' },
+                  { key: 'grn_no', label: 'Reference No' },
+                  { key: 'total_amount', label: 'Total Amount' }
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{f.label}</label>
+                    <input
+                      type="text"
+                      value={uploadData[f.key] || ''}
+                      onChange={e => setUploadData({ ...uploadData, [f.key]: e.target.value })}
+                      className="w-full bg-slate-50 border border-transparent rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-slate-200 outline-none transition-all"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Shipping Address</label>
-                    <textarea 
-                      value={uploadData.shipping_address || ''}
-                      onChange={e => setUploadData({...uploadData, shipping_address: e.target.value})}
-                      className="w-full bg-slate-50 border border-transparent rounded-xl p-3 text-xs font-medium h-20 outline-none focus:bg-white focus:border-slate-200 transition-all resize-none"
-                    />
-                  </div>
-               </div>
+                ))}
+              </div>
 
-               <div className="bg-slate-50 rounded-3xl overflow-hidden border border-slate-100">
-                 <div className="p-4 border-b border-slate-200/50 bg-white/50 flex justify-between items-center">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Line Items Details</h4>
-                    <span className="text-[10px] font-black text-slate-900 bg-white px-2 py-0.5 rounded-full border border-slate-100">{uploadData.items?.length} items</span>
-                 </div>
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                       <thead className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/50">
-                          <tr className="border-b border-slate-100">
-                            {uploadData.company === 'STAR' ? (
-                              <>
-                                <th className="p-3 pl-6">Item</th>
-                                <th className="p-3">Article</th>
-                                <th className="p-3">Description</th>
-                                <th className="p-3 text-right">Rev. Qty</th>
-                                <th className="p-3 text-right">Unit Cost</th>
-                                <th className="p-3 text-right">MRP</th>
-                                <th className="p-3 text-right pr-6">Cost</th>
-                              </>
-                            ) : (
-                              <>
-                                <th className="p-4 pl-6">ASIN</th>
-                                <th className="p-4">Description</th>
-                                <th className="p-4 text-right">Unit Price</th>
-                                <th className="p-4 text-right">Qty</th>
-                                <th className="p-4 text-right pr-6">Total</th>
-                              </>
-                            )}
-                          </tr>
-                       </thead>
-                       <tbody className="divide-y divide-slate-100">
-                          {uploadData.items?.map((item: any, i: number) => (
-                            <tr key={i} className="hover:bg-white transition-colors">
-                              {uploadData.company === 'STAR' ? (
-                                <>
-                                  <td className="p-3 pl-6 text-[10px] font-mono text-slate-400">{item.item_no}</td>
-                                  <td className="p-3 text-[10px] font-mono text-slate-500">{item.article_no}</td>
-                                  <td className="p-3 text-[11px] font-bold text-slate-700">{item.description}</td>
-                                  <td className="p-3 text-right text-[11px] font-black text-slate-900">{item.qty} {item.unit}</td>
-                                  <td className="p-3 text-right text-[11px] text-slate-500">₹{item.cost_per_unit}</td>
-                                  <td className="p-3 text-right text-[11px] text-slate-400">₹{item.mrp}</td>
-                                  <td className="p-3 text-right text-[11px] font-black text-slate-900 pr-6">₹{item.total_amount}</td>
-                                </>
-                              ) : (
-                                <>
-                                  <td className="p-4 pl-6 text-xs font-mono text-slate-400">{item.asin}</td>
-                                  <td className="p-4 text-sm font-bold text-slate-700">{item.description}</td>
-                                  <td className="p-4 text-right text-sm text-slate-500">₹{item.unit_price}</td>
-                                  <td className="p-4 text-right text-sm font-bold text-slate-700">{item.qty}</td>
-                                  <td className="p-4 text-right text-sm font-black text-slate-900 pr-6">₹{item.total_amount}</td>
-                                </>
-                              )}
-                            </tr>
-                          ))}
-                       </tbody>
-                    </table>
-                 </div>
-               </div>
-             </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Vendor Address</label>
+                  <textarea
+                    value={uploadData.vendor_address || ''}
+                    onChange={e => setUploadData({ ...uploadData, vendor_address: e.target.value })}
+                    className="w-full bg-slate-50 border border-transparent rounded-xl p-3 text-xs font-medium h-20 outline-none focus:bg-white focus:border-slate-200 transition-all resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Shipping Address</label>
+                  <textarea
+                    value={uploadData.shipping_address || ''}
+                    onChange={e => setUploadData({ ...uploadData, shipping_address: e.target.value })}
+                    className="w-full bg-slate-50 border border-transparent rounded-xl p-3 text-xs font-medium h-20 outline-none focus:bg-white focus:border-slate-200 transition-all resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-3xl overflow-hidden border border-slate-100">
+                <div className="p-4 border-b border-slate-200/50 bg-white/50 flex justify-between items-center">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Line Items Details</h4>
+                  <span className="text-[10px] font-black text-slate-900 bg-white px-2 py-0.5 rounded-full border border-slate-100">{uploadData.items?.length} items</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/50">
+                      <tr className="border-b border-slate-100">
+                        {uploadData.company === 'STAR' ? (
+                          <>
+                            <th className="p-3 pl-6">Item</th>
+                            <th className="p-3">Article</th>
+                            <th className="p-3">Description</th>
+                            <th className="p-3 text-right">Rev. Qty</th>
+                            <th className="p-3 text-right">Unit Cost</th>
+                            <th className="p-3 text-right">MRP</th>
+                            <th className="p-3 text-right pr-6">Cost</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="p-4 pl-6">ASIN</th>
+                            <th className="p-4">Description</th>
+                            <th className="p-4 text-right">Unit Price</th>
+                            <th className="p-4 text-right">Qty</th>
+                            <th className="p-4 text-right pr-6">Total</th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {uploadData.items?.map((item: any, i: number) => (
+                        <tr key={i} className="hover:bg-white transition-colors">
+                          {uploadData.company === 'STAR' ? (
+                            <>
+                              <td className="p-3 pl-6 text-[10px] font-mono text-slate-400">{item.item_no}</td>
+                              <td className="p-3 text-[10px] font-mono text-slate-500">{item.article_no}</td>
+                              <td className="p-3 text-[11px] font-bold text-slate-700">{item.description}</td>
+                              <td className="p-3 text-right text-[11px] font-black text-slate-900">{item.qty} {item.unit}</td>
+                              <td className="p-3 text-right text-[11px] text-slate-500">₹{item.cost_per_unit}</td>
+                              <td className="p-3 text-right text-[11px] text-slate-400">₹{item.mrp}</td>
+                              <td className="p-3 text-right text-[11px] font-black text-slate-900 pr-6">₹{item.total_amount}</td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="p-4 pl-6 text-xs font-mono text-slate-400">{item.asin}</td>
+                              <td className="p-4 text-sm font-bold text-slate-700">{item.description}</td>
+                              <td className="p-4 text-right text-sm text-slate-500">₹{item.unit_price}</td>
+                              <td className="p-4 text-right text-sm font-bold text-slate-700">{item.qty}</td>
+                              <td className="p-4 text-right text-sm font-black text-slate-900 pr-6">₹{item.total_amount}</td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -384,9 +384,8 @@ export default function BillingDashboard() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 text-xs font-black rounded-xl transition-all ${
-                  activeTab === tab ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                }`}
+                className={`px-6 py-2.5 text-xs font-black rounded-xl transition-all ${activeTab === tab ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                  }`}
               >
                 {tab}
               </button>
@@ -394,10 +393,10 @@ export default function BillingDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-             <button onClick={() => setSortDir(sortDir === 'desc' ? 'asc' : 'desc')} className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 bg-white border border-slate-100 rounded-xl transition-all shadow-sm">
-                <Filter size={14} />
-                {sortDir === 'desc' ? 'Newest First' : 'Oldest First'}
-             </button>
+            <button onClick={() => setSortDir(sortDir === 'desc' ? 'asc' : 'desc')} className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 bg-white border border-slate-100 rounded-xl transition-all shadow-sm">
+              <Filter size={14} />
+              {sortDir === 'desc' ? 'Newest First' : 'Oldest First'}
+            </button>
           </div>
         </div>
 
@@ -406,36 +405,47 @@ export default function BillingDashboard() {
           <table className="w-full text-left border-collapse">
             <thead className="text-[10px] font-black text-slate-300 uppercase tracking-widest border-b border-slate-50">
               <tr>
-                <th className="p-6 pl-8">Source</th>
-                <th className="p-6">Date</th>
-                <th className="p-6">Reference No</th>
-                <th className="p-6">Vendor</th>
-                <th className="p-6 text-right">Amount</th>
-                <th className="p-6 pr-8"></th>
+                <th className="py-5 px-4 pl-8">Source</th>
+                <th className="py-5 px-4">Date</th>
+                <th className="py-5 px-4">Description</th>
+                <th className="py-5 px-4 text-right">Qty</th>
+                <th className="py-5 px-4 text-right">Price</th>
+                <th className="py-5 px-4">Reference No</th>
+                <th className="py-5 px-4 text-right">Amount</th>
+                <th className="py-5 px-4 pr-8"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {bills.map((bill: any) => (
                 <tr key={bill.id} className="group hover:bg-slate-50 transition-all">
-                  <td className="p-6 pl-8">
-                    <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase bg-slate-100 text-slate-500">
+                  <td className="py-5 px-4 pl-8">
+                    <span className="px-2 py-1 rounded-lg text-[9px] font-black uppercase bg-slate-100 text-slate-500">
                       {bill.company}
                     </span>
                   </td>
-                  <td className="p-6 text-sm font-black text-slate-900">
+                  <td className="py-5 px-4 text-xs font-black text-slate-900 whitespace-nowrap">
                     {formatDate(bill.grn_date || bill.challan_date)}
                   </td>
-                  <td className="p-6">
-                    <p className="text-sm font-mono font-bold text-slate-600">{bill.grn_no || bill.challan_no || '-'}</p>
-                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider mt-1">PO: {bill.po_number || 'N/A'}</p>
+                  <td className="py-5 px-4">
+                    <p className="text-xs font-bold text-slate-700 truncate max-w-[140px]">{bill.items?.[0]?.description || '-'}</p>
+                    {bill.items?.length > 1 && <p className="text-[9px] font-bold text-slate-300">+{bill.items.length - 1} more</p>}
                   </td>
-                  <td className="p-6 font-bold text-sm text-slate-700">{bill.vendor_name || '-'}</td>
-                  <td className="p-6 text-right font-black text-slate-900 text-lg">₹{(bill.total_amount || 0).toLocaleString('en-IN')}</td>
-                  <td className="p-6 pr-8 text-right flex items-center justify-end gap-2">
-                    <button onClick={() => deleteBill(bill.id)} className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                      <Trash size={18} />
+                  <td className="py-5 px-4 text-right text-xs font-black text-slate-900">
+                    {bill.items?.[0]?.qty || '-'}
+                  </td>
+                  <td className="py-5 px-4 text-right text-xs text-slate-500 whitespace-nowrap">
+                    ₹{bill.items?.[0]?.unit_price || bill.items?.[0]?.cost_per_unit || '-'}
+                  </td>
+                  <td className="py-5 px-4">
+                    <p className="text-xs font-mono font-bold text-slate-600">{bill.grn_no || bill.challan_no || '-'}</p>
+                    <p className="text-[9px] font-bold text-slate-300 uppercase truncate max-w-[100px]">{bill.vendor_name || '-'}</p>
+                  </td>
+                  <td className="py-5 px-4 text-right font-black text-slate-900 text-base">₹{(bill.total_amount || 0).toLocaleString('en-IN')}</td>
+                  <td className="py-5 px-4 pr-8 text-right flex items-center justify-end gap-1">
+                    <button onClick={() => deleteBill(bill.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                      <Trash size={16} />
                     </button>
-                    <Link href={`/bills/${bill.id}`} className="p-2.5 text-slate-300 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all inline-block">
+                    <Link href={`/bills/${bill.id}`} className="p-2 text-slate-300 hover:text-slate-900 transition-all inline-block hover:scale-110">
                       <ChevronRight size={22} />
                     </Link>
                   </td>
@@ -450,7 +460,7 @@ export default function BillingDashboard() {
               <p className="text-slate-300 font-bold text-xs uppercase tracking-widest">Searching records...</p>
             </div>
           )}
-          
+
           {!loading && bills.length === 0 && (
             <div className="p-32 text-center">
               <p className="text-slate-300 font-bold text-sm">No records found for "{search}"</p>
@@ -464,7 +474,7 @@ export default function BillingDashboard() {
             <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
               <div className={`flex items-center gap-4 mb-6 ${modal.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${modal.type === 'error' ? 'bg-red-50' : 'bg-emerald-50'}`}>
-                   {modal.type === 'error' ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
+                  {modal.type === 'error' ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900">{modal.type === 'error' ? 'Error' : 'Success'}</h3>

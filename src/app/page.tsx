@@ -218,6 +218,14 @@ export default function BillingDashboard() {
               {isSyncing ? <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin" /> : <RefreshCw size={18} />}
               Sync Gmail
             </button>
+            <a
+              href="/api/export"
+              download
+              className="flex items-center gap-2 px-8 py-3.5 text-sm font-black text-slate-600 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <Download size={18} />
+              Export Ledger
+            </a>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-2 px-8 py-3.5 text-sm font-black text-white bg-slate-900 rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-200"

@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local data
+/data/*.db
+/data/*.db-journal
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# temporary files
+/scratch/
+.DS_Store
+*.log
+

@@ -3,17 +3,9 @@ import path from 'path';
 
 const isProd = process.env.NODE_ENV === 'production';
 
-export const db = knex({
-  client: isProd ? 'pg' : 'sqlite3',
-  connection: isProd 
-    ? process.env.DATABASE_URL
-    : {
-        filename: path.join(process.cwd(), 'data', 'billing.db'),
-      },
-  useNullAsDefault: true,
-  migrations: {
-    directory: path.join(process.cwd(), 'src', 'lib', 'db', 'migrations'),
-  },
-});
+const knexConfig = require('../../../knexfile');
+const config = isProd ? knexConfig.production : knexConfig.development;
+
+export const db = knex(config);
 
 export default db;

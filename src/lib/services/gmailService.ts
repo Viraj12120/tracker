@@ -39,6 +39,7 @@ export async function syncStarBillsFromGmail() {
     };
 
     const messages = await connection.search(searchCriteria, fetchOptions);
+    console.log(`IMAP Search found ${messages.length} messages.`);
 
     for (const message of messages) {
       const messageId = message.attributes.uid.toString();
@@ -68,7 +69,7 @@ export async function syncStarBillsFromGmail() {
                   return isNaN(num) ? 0 : num;
                 };
 
-                const [billId] = await trx('bills').insert({
+                const insertResult = await trx('bills').insert({
                   company: parsedData.company,
                   source: 'auto_email',
                   po_number: parsedData.po_number,
@@ -85,7 +86,9 @@ export async function syncStarBillsFromGmail() {
                   notes: `Auto-fetched from Gmail (UID: ${messageId})`,
                   status: 'confirmed',
                   pdf_filename: attachment.filename || 'attachment.pdf'
-                });
+                }).returning('id');
+
+                const billId = typeof insertResult[0] === 'object' ? insertResult[0].id : insertResult[0];
 
                 if (parsedData.items && parsedData.items.length > 0) {
                   const itemsToInsert = parsedData.items.map((item: any) => ({

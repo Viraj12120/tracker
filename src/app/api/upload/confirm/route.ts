@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     const billId = await db.transaction(async trx => {
       // 1. Insert into bills table (Header)
-      const [id] = await trx('bills').insert({
+      const insertResult = await trx('bills').insert({
         company: data.company,
         source: 'manual_upload',
         grn_no: data.grn_no,
@@ -46,7 +46,9 @@ export async function POST(request: NextRequest) {
         pdf_filename: data.pdf_filename,
         status: 'confirmed',
         notes: data.notes
-      });
+      }).returning('id');
+
+      const id = typeof insertResult[0] === 'object' ? insertResult[0].id : insertResult[0];
 
       // 2. Insert into bill_items table
       if (data.items && Array.isArray(data.items)) {

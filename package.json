@@ -3,19 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --max-old-space-size=8192 node_modules/next/dist/bin/next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@napi-rs/canvas": "^0.1.100",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0",
+    "imap-simple": "^5.1.0",
+    "knex": "^3.2.9",
+    "lucide-react": "^1.14.0",
+    "mailparser": "^3.9.8",
     "next": "16.2.4",
+    "pdf-parse": "^1.1.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/imap-simple": "^4.2.10",
+    "@types/mailparser": "^3.4.6",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

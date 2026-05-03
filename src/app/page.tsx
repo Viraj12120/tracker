@@ -230,7 +230,7 @@ export default function BillingDashboard() {
         </header>
 
         {/* Monochromatic KPI Cards */}
-        <div className={`grid grid-cols-1 ${activeTab === 'ALL' || activeTab === 'AMAZON' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-12`}>
+        <div className={`grid grid-cols-1 ${activeTab === 'AMAZON' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-12`}>
            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-center">
               <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Total Records</p>
               <p className="text-3xl font-black tracking-tighter">{stats.total_bills || 0} <span className="text-sm font-bold text-slate-300">BILLS</span></p>
@@ -243,7 +243,7 @@ export default function BillingDashboard() {
               <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Weight Processed</p>
               <p className="text-3xl font-black tracking-tighter">{(stats.total_weight || 0).toLocaleString('en-IN')} <span className="text-sm font-bold text-slate-300">KG</span></p>
            </div>
-           {(activeTab === 'ALL' || activeTab === 'AMAZON') && (
+           {activeTab === 'AMAZON' && (
              <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-2xl shadow-slate-200 flex flex-col justify-center">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Kesar Pieces</p>
                 <p className="text-3xl font-black tracking-tighter">{stats.kesar_qty || 0} <span className="text-sm font-bold text-slate-400">PCS</span></p>

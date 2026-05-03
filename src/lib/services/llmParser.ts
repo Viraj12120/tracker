@@ -124,7 +124,7 @@ export async function parseWithLLM(pdfBuffer: Buffer): Promise<any> {
     - Root total_amount = the printed "Total" Net Amount value (totals row). 
 
     STAR Goods Receipt Slip:
-    - Header: grn_no, grn_date, current_date, plant_code, plant_description, plant_name, company_pan, gstn, vendor_code, vendor_name, vendor_address, supply_state, delivery_note, vendor_inv_no, po_number, header_text, movement_type.
+    - Header: grn_no (Goods Receipt Slip No), grn_date (Goods Receipt Date), current_date, plant_code (Plant), plant_description (Receiving Plant description), plant_name (Receiving Plant Name & Code), company_pan (Company PAN), gstn (GSTN/UIN), vendor_code (Vendor code part before hyphen), vendor_name (Vendor name part after hyphen), vendor_address (Vendor Supply Address), supply_state (Supply State Name & Code), delivery_note (Delivery Note), vendor_inv_no (Vendor Inv No.), po_number (PO), header_text (Header Text), movement_type (Movement Type).
     - Items: Item → item_no, Article → article_no, Rev. Qty → qty, Unit Cost → cost_per_unit, MRP → mrp, Cost → total_amount, tax fields (CGST, SGST, CESS).
     - Root total_amount = the printed "Cost" column total row value.
 

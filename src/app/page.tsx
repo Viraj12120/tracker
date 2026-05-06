@@ -141,6 +141,7 @@ export default function BillingDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(uploadData),
       });
+      const result = await res.json();
       if (res.ok) {
         fetchBills();
         fetchStats();
@@ -148,8 +149,11 @@ export default function BillingDashboard() {
           setModal({ isOpen: true, message: 'Successfully saved bill(s)!', type: 'success' });
         }
         handleNextInQueue();
+      } else if (res.status === 409) {
+        // Duplicate detected — show warning and let user decide to skip
+        setModal({ isOpen: true, message: `⚠️ Duplicate Bill Detected\n\n${result.error}\n\nThis bill was NOT saved. Click dismiss to continue.`, type: 'error' });
+        handleNextInQueue();
       } else {
-        const result = await res.json();
         setModal({ isOpen: true, message: `Save failed: ${result.error}`, type: 'error' });
       }
     } catch (err: any) {
@@ -233,7 +237,7 @@ export default function BillingDashboard() {
               {isUploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus size={18} />}
               Process New
             </button>
-            <input type="file" multiple ref={fileInputRef} onChange={handleFileUpload} accept=".pdf" className="hidden" />
+            <input type="file" multiple ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" />
           </div>
         </header>
 
@@ -342,6 +346,18 @@ export default function BillingDashboard() {
                             <th className="p-3 text-right">MRP</th>
                             <th className="p-3 text-right pr-6">Cost</th>
                           </>
+                        ) : uploadData.company === 'ZEPTO' ? (
+                          <>
+                             <th className="p-3 pl-6">HSN</th>
+                             <th className="p-3">Description</th>
+                             <th className="p-3 text-right">Actual Qty</th>
+                             <th className="p-3 text-right">Return</th>
+                             <th className="p-3 text-right">Net Qty</th>
+                             <th className="p-3 text-right">Unit Price</th>
+                             <th className="p-3 text-right">CGST</th>
+                             <th className="p-3 text-right">SGST</th>
+                             <th className="p-3 text-right pr-6">Total</th>
+                          </>
                         ) : (
                           <>
                             <th className="p-4 pl-6">ASIN</th>
@@ -365,6 +381,18 @@ export default function BillingDashboard() {
                               <td className="p-3 text-right text-[11px] text-slate-500">₹{item.cost_per_unit}</td>
                               <td className="p-3 text-right text-[11px] text-slate-400">₹{item.mrp}</td>
                               <td className="p-3 text-right text-[11px] font-black text-slate-900 pr-6">₹{item.total_amount}</td>
+                            </>
+                          ) : uploadData.company === 'ZEPTO' ? (
+                            <>
+                               <td className="p-3 pl-6 text-[10px] font-mono text-slate-400">{item.hsn_code || '-'}</td>
+                               <td className="p-3 text-[11px] font-bold text-slate-700 max-w-[180px]">{item.description}</td>
+                               <td className="p-3 text-right text-[11px] font-black text-slate-900">{item.actual_qty || item.qty}</td>
+                               <td className="p-3 text-right text-[11px] font-black text-red-500">{item.return_qty > 0 ? `-${item.return_qty}` : '-'}</td>
+                               <td className="p-3 text-right text-[11px] font-black text-slate-900">{item.qty}</td>
+                               <td className="p-3 text-right text-[11px] text-slate-500">₹{item.unit_price}</td>
+                               <td className="p-3 text-right text-[10px] text-slate-400">{item.cgst_rate}% / ₹{item.cgst_amt}</td>
+                               <td className="p-3 text-right text-[10px] text-slate-400">{item.sgst_rate}% / ₹{item.sgst_amt}</td>
+                               <td className="p-3 text-right text-[11px] font-black text-slate-900 pr-6">₹{item.total_amount}</td>
                             </>
                           ) : (
                             <>
@@ -439,7 +467,7 @@ export default function BillingDashboard() {
                     {bill.items?.length > 1 && <p className="text-[9px] font-bold text-slate-300">+{bill.items.length - 1} more</p>}
                   </td>
                   <td className="py-5 px-4 text-right text-xs font-black text-slate-900">
-                    {bill.items?.[0]?.qty || '-'}
+                    {bill.items?.[0]?.qty || '-'} {bill.items?.[0]?.unit || ''}
                   </td>
                   <td className="py-5 px-4 text-right text-xs text-slate-500 whitespace-nowrap">
                     ₹{bill.items?.[0]?.unit_price || bill.items?.[0]?.cost_per_unit || '-'}

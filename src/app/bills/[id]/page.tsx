@@ -200,6 +200,17 @@ export default function BillDetailPage() {
                         <th className="px-4 py-4 text-right border-b border-slate-200">Tax</th>
                         <th className="px-8 py-4 text-right border-b border-slate-200">Total</th>
                       </>
+                    ) : bill.company === 'ZEPTO' ? (
+                      <>
+                         <th className="px-4 py-4 text-left border-b border-slate-200">HSN</th>
+                         <th className="px-4 py-4 text-left border-b border-slate-200">Description</th>
+                         <th className="px-4 py-4 text-right border-b border-slate-200">Actual Qty</th>
+                         <th className="px-4 py-4 text-right border-b border-slate-200 text-red-500">Return</th>
+                         <th className="px-4 py-4 text-right border-b border-slate-200">Net Qty</th>
+                        <th className="px-4 py-4 text-right border-b border-slate-200">Unit Price</th>
+                        <th className="px-4 py-4 text-right border-b border-slate-200">Tax</th>
+                        <th className="px-8 py-4 text-right border-b border-slate-200">Total</th>
+                      </>
                     ) : (
                       <>
                         <th className="px-4 py-4 text-left border-b border-slate-200">ASIN / ID</th>
@@ -247,6 +258,36 @@ export default function BillDetailPage() {
                             {currencySymbol}{item.total_amount?.toLocaleString('en-IN')}
                           </td>
                         </>
+                      ) : bill.company === 'ZEPTO' ? (
+                        <>
+                          <td className="px-4 py-5">
+                            <p className="text-xs font-black text-slate-900 font-mono tracking-tight">{item.hsn_code || '-'}</p>
+                          </td>
+                          <td className="px-4 py-5 max-w-xs">
+                            <p className="text-sm font-bold text-slate-800 leading-tight">{item.description}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">{item.unit}</p>
+                          </td>
+                          <td className="px-4 py-5 text-right text-sm font-black text-slate-900">
+                            {item.qty}
+                          </td>
+                          <td className="px-4 py-5 text-right text-sm font-medium text-slate-500">
+                            {currencySymbol}{item.unit_price}
+                          </td>
+                          <td className="px-4 py-5 text-right">
+                            <div className="inline-flex flex-col items-end">
+                              <span className="text-[10px] font-black text-slate-800">
+                                {item.cgst_amt > 0 ? `${currencySymbol}${item.cgst_amt} CGST` : ''}
+                              </span>
+                              <span className="text-[10px] font-black text-slate-800">
+                                {item.sgst_amt > 0 ? `${currencySymbol}${item.sgst_amt} SGST` : ''}
+                              </span>
+                              {!(item.cgst_amt > 0 || item.sgst_amt > 0) && <span className="text-xs text-slate-300">-</span>}
+                            </div>
+                          </td>
+                          <td className="px-8 py-5 text-right text-sm font-black text-slate-900">
+                            {currencySymbol}{item.total_amount?.toLocaleString('en-IN')}
+                          </td>
+                        </>
                       ) : (
                         <>
                           <td className="px-4 py-5">
@@ -271,7 +312,7 @@ export default function BillDetailPage() {
                 </tbody>
                 <tfoot className="bg-slate-50/50">
                   <tr>
-                    <td colSpan={bill.company === 'STAR' ? 6 : 4} className="px-8 py-6 text-right text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+                     <td colSpan={bill.company === 'STAR' ? 6 : bill.company === 'ZEPTO' ? 8 : 5} className="px-8 py-6 text-right text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
                       Grand Total
                     </td>
                     <td className="px-8 py-6 text-right text-2xl font-black text-slate-900">

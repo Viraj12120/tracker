@@ -1,20 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db/knex';
 
+const cleanNumber = (val: any) => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/[^0-9.-]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
+/**
+ * Content-based duplicate guard for manual uploads.
+ * Returns an existing bill if a duplicate is found, otherwise null.
+ */
+async function findDuplicate(data: any): Promise<any | null> {
+  const company: string = (data.company || '').toUpperCase();
+
+  if (company === 'STAR') {
+    // Primary: grn_no must be unique
+    if (data.grn_no) {
+      const existing = await db('bills')
+        .where('status', '!=', 'deleted')
+        .where('grn_no', data.grn_no)
+        .first();
+      if (existing) return existing;
+    }
+  } else if (company === 'AMAZON' || company === 'ZEPTO') {
+    // Primary: challan_no (invoice number) must be unique
+    if (data.challan_no) {
+      const existing = await db('bills')
+        .where('status', '!=', 'deleted')
+        .where('challan_no', data.challan_no)
+        .first();
+      if (existing) return existing;
+    }
+    // Fallback: same vendor + same date + same total
+    if (data.challan_date && data.vendor_name && data.total_amount) {
+      const existing = await db('bills')
+        .where('status', '!=', 'deleted')
+        .where('company', company)
+        .where('vendor_name', data.vendor_name)
+        .where('total_amount', cleanNumber(data.total_amount))
+        .whereRaw('DATE(challan_date) = ?', [data.challan_date.toString().split('T')[0]])
+        .first();
+      if (existing) return existing;
+    }
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    
-    const cleanNumber = (val: any) => {
-      if (typeof val === 'number') return val;
-      if (!val) return 0;
-      const cleaned = String(val).replace(/[^0-9.-]/g, '');
-      const num = parseFloat(cleaned);
-      return isNaN(num) ? 0 : num;
-    };
+
+    // ── Duplicate guard ──────────────────────────────────────────────────────
+    const duplicate = await findDuplicate(data);
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: `Duplicate bill detected. A ${data.company} bill with the same ${
+            data.grn_no ? `GRN No (${data.grn_no})` : `Invoice No (${data.challan_no || 'unknown'})`
+          } already exists (ID: ${duplicate.id}).`,
+          duplicate_id: duplicate.id,
+        },
+        { status: 409 }
+      );
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const billId = await db.transaction(async trx => {
-      // 1. Insert into bills table (Header)
       const insertResult = await trx('bills').insert({
         company: data.company,
         source: 'manual_upload',
@@ -33,15 +88,12 @@ export async function POST(request: NextRequest) {
         company_pan: data.company_pan,
         gstn: data.gstn,
         movement_type: data.movement_type,
-
         challan_no: data.challan_no,
         challan_date: data.challan_date ? new Date(data.challan_date) : null,
         challan_version: data.challan_version,
-
         billing_address: data.billing_address,
         shipping_address: data.shipping_address,
         currency: data.currency,
-
         total_amount: cleanNumber(data.total_amount),
         pdf_filename: data.pdf_filename,
         status: 'confirmed',
@@ -50,7 +102,6 @@ export async function POST(request: NextRequest) {
 
       const id = typeof insertResult[0] === 'object' ? insertResult[0].id : insertResult[0];
 
-      // 2. Insert into bill_items table
       if (data.items && Array.isArray(data.items)) {
         const itemsToInsert = data.items.map((item: any) => ({
           bill_id: id,
@@ -73,6 +124,8 @@ export async function POST(request: NextRequest) {
           sgst_amt: cleanNumber(item.sgst_amt),
           cess_rate: cleanNumber(item.cess_rate),
           cess_amt: cleanNumber(item.cess_amt),
+          actual_qty: cleanNumber(item.actual_qty),
+          return_qty: cleanNumber(item.return_qty),
           raw_details: item.raw_details ? JSON.stringify(item.raw_details) : null
         }));
 
@@ -80,15 +133,15 @@ export async function POST(request: NextRequest) {
           await trx('bill_items').insert(itemsToInsert);
         }
       }
-      
+
       return id;
     });
 
     return NextResponse.json({ success: true, id: billId });
   } catch (error: any) {
     console.error('Error confirming bill:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Failed to save bill' 
+    return NextResponse.json({
+      error: error.message || 'Failed to save bill'
     }, { status: 500 });
   }
 }

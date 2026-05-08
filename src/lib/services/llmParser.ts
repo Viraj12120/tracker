@@ -17,8 +17,13 @@ async function withRetry<T>(
         err?.status === 429 ||
         err?.message?.includes('429') ||
         err?.message?.includes('Too Many Requests');
+      const is503 =
+        err?.status === 503 ||
+        err?.message?.includes('503') ||
+        err?.message?.includes('Service Unavailable') ||
+        err?.message?.includes('high demand');
 
-      if (is429 && attempt < maxRetries) {
+      if ((is429 || is503) && attempt < maxRetries) {
         // Try to honour the Retry-After hint from the API, else use backoff
         const retryAfterMatch = err?.message?.match(/retry in ([\d.]+)s/i);
         const delayMs = retryAfterMatch
@@ -43,7 +48,7 @@ export async function parseWithLLM(pdfBuffer: Buffer, mimeType: string = 'applic
   }
 
   const model = genAI.getGenerativeModel({
-    model: 'gemini-flash-lite-latest',
+    model: 'gemini-2.0-flash',
     generationConfig: {
       responseMimeType: 'application/json',
     },

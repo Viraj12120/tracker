@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db/knex';
+import { triggerSync } from '@/lib/services/syncToProd';
 
 export async function GET(request: NextRequest) {
   try {
@@ -83,7 +84,7 @@ export async function DELETE(request: NextRequest) {
 
     // Soft delete
     await db('bills').whereIn('id', ids).update({ status: 'deleted' });
-
+    triggerSync(); // fire-and-forget: push to production Supabase
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting bills:', error);

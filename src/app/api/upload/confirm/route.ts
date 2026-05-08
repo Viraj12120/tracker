@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db/knex';
+import { triggerSync } from '@/lib/services/syncToProd';
 
 const cleanNumber = (val: any) => {
   if (typeof val === 'number') return val;
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest) {
       return id;
     });
 
+    triggerSync(); // fire-and-forget: push to production Supabase
     return NextResponse.json({ success: true, id: billId });
   } catch (error: any) {
     console.error('Error confirming bill:', error);

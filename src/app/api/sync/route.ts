@@ -1,19 +1,11 @@
 import { NextResponse } from 'next/server';
 import { syncStarBillsFromGmail } from '@/lib/services/gmailService';
-
-let isSyncing = false;
+import { triggerSync } from '@/lib/services/syncToProd';
 
 export async function POST() {
-  if (isSyncing) {
-    return NextResponse.json({ 
-      success: false, 
-      error: 'A sync operation is already in progress. Please wait.' 
-    }, { status: 429 });
-  }
-
-  isSyncing = true;
   try {
     const processedCount = await syncStarBillsFromGmail();
+    if (processedCount > 0) triggerSync(); // fire-and-forget: push to production Supabase
     
     return NextResponse.json({ 
       success: true, 
@@ -26,7 +18,5 @@ export async function POST() {
       success: false, 
       error: error.message || 'Failed to sync emails from Gmail' 
     }, { status: 500 });
-  } finally {
-    isSyncing = false;
   }
 }

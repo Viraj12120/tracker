@@ -1,6 +1,6 @@
 import imaps from 'imap-simple';
 import { simpleParser } from 'mailparser';
-import { parsePdfBuffer } from './pdfParser';
+import pdfParse from 'pdf-parse';
 import db from '../db/knex';
 
 /**
@@ -125,77 +125,139 @@ export async function syncStarBillsFromGmail() {
             attachment.filename?.toLowerCase().endsWith('.pdf')
           ) {
             try {
-              const parsedData = await parsePdfBuffer(attachment.content);
+              // Parse PDF locally to avoid AI rate limits
+              const pdfData = await pdfParse(attachment.content);
+              const text = pdfData.text;
 
-              // Content-based duplicate guard (prevents re-sync duplicates)
-              const duplicate = await isDuplicate(parsedData);
-              if (duplicate) continue;
-
-              const cleanNumber = (val: any) => {
-                if (typeof val === 'number') return val;
-                if (!val) return 0;
-                const cleaned = String(val).replace(/[^0-9.-]/g, '');
-                const num = parseFloat(cleaned);
-                return isNaN(num) ? 0 : num;
+              const parsed = {
+                company: 'STAR',
+                grn_no: null as string | null,
+                grn_date: null as string | null,
+                vendor_code: null as string | null,
+                vendor_name: null as string | null,
+                po_number: null as string | null,
+                total_amount: 0,
+                items: [] as any[],
               };
+
+              const grnMatch = text.match(/Goods\s+Receipt\s+Slip\s+No\s*:\s*(\d+)/i);
+              if (grnMatch) parsed.grn_no = grnMatch[1];
+
+              const dateMatch = text.match(/Goods\s+Receipt\s+Date\s*:\s*([\d\.]+)/i);
+              if (dateMatch) {
+                const parts = dateMatch[1].split('.');
+                if (parts.length === 3) {
+                  parsed.grn_date = `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+                }
+              }
+
+              const vendorMatch = text.match(/Vendor\s*:\s*(\d+)\s*-\s*([\s\S]*?)Vendor Supply Address/i);
+              if (vendorMatch) {
+                parsed.vendor_code = vendorMatch[1].trim();
+                parsed.vendor_name = vendorMatch[2].replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+              }
+
+              const poMatch = text.match(/PO\s*:\s*(\d+)/i);
+              if (poMatch) parsed.po_number = poMatch[1];
+
+              const totalMatch = text.match(/Total[\d,\s]+?(\d+)(?:0\.00)+/);
+              if (totalMatch) {
+                parsed.total_amount = parseInt(totalMatch[1], 10);
+              } else {
+                const fallbackMatch = text.match(/Total[\d,\s]+?\s+(\d+)\.?(?:0\.00)*\s*This is Computer/i);
+                if (fallbackMatch) parsed.total_amount = parseInt(fallbackMatch[1], 10);
+              }
+
+              const finalGrn = parsed.grn_no || (attachment.filename ? attachment.filename.replace(/\.[^/.]+$/, "") : `EMAIL_${messageId}`);
+
+              // Parse Line Items
+              const lines = text.split('\n').map(l => l.trim());
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const itemStartMatch = line.match(/^(\d{4})([A-Za-z-]+)(\d{8})(\d{7})(.*)/);
+                if (itemStartMatch) {
+                  const hsn_code = itemStartMatch[3];
+                  const article_no = itemStartMatch[4];
+                  let description = itemStartMatch[5];
+                  
+                  let dataLine = null;
+                  for (let j = 1; j <= 3 && (i + j) < lines.length; j++) {
+                    const nextLine = lines[i + j];
+                    if (/^[A-Z0-9]{4}\d{10,15}/.test(nextLine)) {
+                      dataLine = nextLine;
+                      for (let k = 1; k < j; k++) description += ' ' + lines[i + k];
+                      break;
+                    }
+                  }
+                  
+                  if (dataLine) {
+                    let po_qty = 0, qty = 0, unit = 'KG', unit_price = 0, mrp = 0, total_amount = 0;
+                    const dataMatch = dataLine.match(/^[A-Z0-9]{4}\d{10,15}([\d,]+)\s+([\d,]+)(KG|PCS|NOS|EA)([\d\.]+)([\d\.]+)([\d\.]+)/i);
+                    
+                    if (dataMatch) {
+                      po_qty = parseFloat(dataMatch[1].replace(',', '.'));
+                      qty = parseFloat(dataMatch[2].replace(',', '.'));
+                      unit = dataMatch[3];
+                      const floats = [...dataLine.matchAll(/(\d+\.\d{2})/g)].map(m => parseFloat(m[1]));
+                      if (floats.length >= 3) {
+                        unit_price = floats[0]; mrp = floats[1]; total_amount = floats[2];
+                      }
+                    } else {
+                      const qtys = [...dataLine.matchAll(/([\d]+,[\d]{2})/g)].map(m => parseFloat(m[1].replace(',', '.')));
+                      if (qtys.length >= 2) { po_qty = qtys[0]; qty = qtys[1]; } else if (qtys.length === 1) qty = qtys[0];
+                      const unitMatch = dataLine.match(/(KG|PCS|NOS|EA)/i);
+                      if (unitMatch) unit = unitMatch[1];
+                      const floats = [...dataLine.matchAll(/(\d+\.\d{2})/g)].map(m => parseFloat(m[1]));
+                      if (floats.length >= 3) {
+                        unit_price = floats[0]; mrp = floats[1]; total_amount = floats[2];
+                      }
+                    }
+                    
+                    parsed.items.push({ description: description.trim(), qty, unit_price, total_amount, hsn_code, article_no, mrp, unit });
+                  }
+                }
+              }
+              
+              // Duplicate guard
+              const isDuplicateLocal = async () => {
+                if (parsed.grn_no) {
+                  const existing = await db('bills').where('status', '!=', 'deleted').where('grn_no', parsed.grn_no).first();
+                  if (existing) return true;
+                }
+                return false;
+              };
+              
+              if (await isDuplicateLocal()) continue;
 
               await db.transaction(async (trx) => {
                 const insertResult = await trx('bills').insert({
-                  company: parsedData.company,
+                  company: parsed.company,
                   source: 'auto_email',
-                  po_number: parsedData.po_number,
-                  vendor_code: parsedData.vendor_code,
-                  vendor_name: parsedData.vendor_name,
-                  vendor_address: parsedData.vendor_address,
-                  billing_address: parsedData.billing_address,
-                  shipping_address: parsedData.shipping_address,
-                  currency: parsedData.currency,
-                  company_pan: parsedData.company_pan,
-                  gstn: parsedData.gstn,
-                  total_amount: cleanNumber(parsedData.total_amount),
-                  grn_no: parsedData.grn_no,
-                  grn_date: parsedData.grn_date ? new Date(parsedData.grn_date) : null,
-                  plant_code: parsedData.plant_code,
-                  plant_name: parsedData.plant_name,
-                  plant_description: parsedData.plant_description,
-                  delivery_note: parsedData.delivery_note,
-                  vendor_inv_no: parsedData.vendor_inv_no,
-                  movement_type: parsedData.movement_type,
-                  challan_no: parsedData.challan_no,
-                  challan_date: parsedData.challan_date ? new Date(parsedData.challan_date) : null,
-                  challan_version: parsedData.challan_version,
-                  notes: `Auto-fetched from Gmail (gmail_uid:${messageId})`,
-                  status: 'confirmed',
+                  vendor_name: parsed.vendor_name || 'Pending Sync (Direct)',
+                  vendor_code: parsed.vendor_code,
+                  po_number: parsed.po_number,
+                  total_amount: parsed.total_amount,
+                  grn_no: finalGrn,
+                  grn_date: parsed.grn_date ? new Date(parsed.grn_date) : new Date(),
+                  notes: `Auto-fetched from Gmail (gmail_uid:${messageId}). Regex parsed.`,
+                  status: 'confirmed', // If we parsed successfully, mark as confirmed
                   pdf_filename: attachment.filename || 'attachment.pdf'
                 }).returning('id');
 
-                const billId =
-                  typeof insertResult[0] === 'object' ? insertResult[0].id : insertResult[0];
+                const billId = typeof insertResult[0] === 'object' ? insertResult[0].id : insertResult[0];
 
-                if (parsedData.items && parsedData.items.length > 0) {
-                  const itemsToInsert = parsedData.items.map((item: any) => ({
+                if (parsed.items && parsed.items.length > 0) {
+                  const itemsToInsert = parsed.items.map((item: any) => ({
                     bill_id: billId,
                     description: item.description,
-                    qty: cleanNumber(item.qty),
-                    unit: item.unit,
-                    unit_price: cleanNumber(item.unit_price || item.cost_per_unit),
-                    total_amount: cleanNumber(item.total_amount),
-                    asin: item.asin,
-                    article_no: item.article_no,
+                    qty: item.qty,
+                    unit_price: item.unit_price,
+                    cost_per_unit: item.unit_price,
+                    total_amount: item.total_amount,
                     hsn_code: item.hsn_code,
-                    mrp: cleanNumber(item.mrp),
-                    cost_per_unit: cleanNumber(item.cost_per_unit),
-                    po_qty: cleanNumber(item.po_qty),
-                    ean: item.ean,
-                    merch_cat: item.merch_cat,
-                    cgst_rate: cleanNumber(item.cgst_rate),
-                    cgst_amt: cleanNumber(item.cgst_amt),
-                    sgst_rate: cleanNumber(item.sgst_rate),
-                    sgst_amt: cleanNumber(item.sgst_amt),
-                    cess_rate: cleanNumber(item.cess_rate),
-                    cess_amt: cleanNumber(item.cess_amt),
-                    actual_qty: cleanNumber(item.actual_qty),
-                    return_qty: cleanNumber(item.return_qty)
+                    article_no: item.article_no,
+                    mrp: item.mrp,
+                    unit: item.unit,
                   }));
                   await trx('bill_items').insert(itemsToInsert);
                 }

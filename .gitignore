@@ -51,3 +51,6 @@ next-env.d.ts
 .DS_Store
 *.log
 
+# custom test scripts
+/scripts/*
+!/scripts/sync-to-prod.js

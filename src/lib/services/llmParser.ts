@@ -176,7 +176,17 @@ Rules:
     ]));
 
     const response = await result.response;
-    return JSON.parse(response.text());
+    const text = response.text();
+    
+    // Clean potential markdown backticks from Gemini
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    try {
+      return JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error('Failed to parse Gemini JSON. Raw text:', text);
+      throw new Error(`Invalid JSON response from AI: ${text.slice(0, 100)}...`);
+    }
   } catch (error: any) {
     console.error('Gemini API Error details:', {
       message: error.message,

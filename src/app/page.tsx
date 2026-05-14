@@ -110,8 +110,17 @@ export default function BillingDashboard() {
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Upload failed');
+      
+      let result;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text.slice(0, 100) || 'Server returned a non-JSON error');
+      }
+
+      if (!res.ok) throw new Error(result.error || `Upload failed (${res.status})`);
       if (result.success) setUploadData({ ...result.data, pdf_filename: result.filename });
     } catch (err: any) {
       setModal({ isOpen: true, message: `Error parsing ${file.name}: ${err.message}`, type: 'error' });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseFileBuffer } from '@/lib/services/pdfParser';
+export const maxDuration = 60; 
 
 // Supported MIME types and their display names
 const SUPPORTED_TYPES: Record<string, string> = {

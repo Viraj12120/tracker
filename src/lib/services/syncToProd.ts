@@ -66,6 +66,7 @@ export async function syncToProd(): Promise<void> {
   }
 
   _isSyncing = true;
+  console.log('[syncToProd] 🔄 Starting background sync to Supabase...');
   const localDb = knex({
     client: 'sqlite3',
     connection: { filename: path.join(process.cwd(), 'data', 'billing.db') },

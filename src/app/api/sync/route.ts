@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 import { syncStarBillsFromGmail } from '@/lib/services/gmailService';
 import { triggerSync } from '@/lib/services/syncToProd';
+export const maxDuration = 60; 
 
 export async function POST() {
   try {
     const processedCount = await syncStarBillsFromGmail();
-    if (processedCount > 0) triggerSync(); // fire-and-forget: push to production Supabase
+    triggerSync(); // Always trigger sync to push any local updates (Gmail or Manual) to Supabase
     
     return NextResponse.json({ 
       success: true, 
-      message: `Successfully synchronized ${processedCount} new bills from Gmail.`,
+      message: `Sync complete. ${processedCount} new bills found in Gmail. Local data is being pushed to production.`,
       count: processedCount
     });
   } catch (error: any) {

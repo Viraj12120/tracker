@@ -1,6 +1,6 @@
 import imaps from 'imap-simple';
 import { simpleParser } from 'mailparser';
-import pdfParse from 'pdf-parse';
+import { parseFileBuffer } from './pdfParser';
 import db from '../db/knex';
 
 /**
@@ -125,98 +125,10 @@ export async function syncStarBillsFromGmail() {
             attachment.filename?.toLowerCase().endsWith('.pdf')
           ) {
             try {
-              // Parse PDF locally to avoid AI rate limits
-              const pdfData = await pdfParse(attachment.content);
-              const text = pdfData.text;
-
-              const parsed = {
-                company: 'STAR',
-                grn_no: null as string | null,
-                grn_date: null as string | null,
-                vendor_code: null as string | null,
-                vendor_name: null as string | null,
-                po_number: null as string | null,
-                total_amount: 0,
-                items: [] as any[],
-              };
-
-              const grnMatch = text.match(/Goods\s+Receipt\s+Slip\s+No\s*:\s*(\d+)/i);
-              if (grnMatch) parsed.grn_no = grnMatch[1];
-
-              const dateMatch = text.match(/Goods\s+Receipt\s+Date\s*:\s*([\d\.]+)/i);
-              if (dateMatch) {
-                const parts = dateMatch[1].split('.');
-                if (parts.length === 3) {
-                  parsed.grn_date = `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
-                }
-              }
-
-              const vendorMatch = text.match(/Vendor\s*:\s*(\d+)\s*-\s*([\s\S]*?)Vendor Supply Address/i);
-              if (vendorMatch) {
-                parsed.vendor_code = vendorMatch[1].trim();
-                parsed.vendor_name = vendorMatch[2].replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-              }
-
-              const poMatch = text.match(/PO\s*:\s*(\d+)/i);
-              if (poMatch) parsed.po_number = poMatch[1];
-
-              const totalMatch = text.match(/Total[\d,\s]+?(\d+)(?:0\.00)+/);
-              if (totalMatch) {
-                parsed.total_amount = parseInt(totalMatch[1], 10);
-              } else {
-                const fallbackMatch = text.match(/Total[\d,\s]+?\s+(\d+)\.?(?:0\.00)*\s*This is Computer/i);
-                if (fallbackMatch) parsed.total_amount = parseInt(fallbackMatch[1], 10);
-              }
-
+              // Use the shared parser (Fast-Path for STAR/AMAZON, AI for others)
+              const parsed = await parseFileBuffer(attachment.content, 'application/pdf');
+              
               const finalGrn = parsed.grn_no || (attachment.filename ? attachment.filename.replace(/\.[^/.]+$/, "") : `EMAIL_${messageId}`);
-
-              // Parse Line Items
-              const lines = text.split('\n').map(l => l.trim());
-              for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const itemStartMatch = line.match(/^(\d{4})([A-Za-z-]+)(\d{8})(\d{7})(.*)/);
-                if (itemStartMatch) {
-                  const hsn_code = itemStartMatch[3];
-                  const article_no = itemStartMatch[4];
-                  let description = itemStartMatch[5];
-                  
-                  let dataLine = null;
-                  for (let j = 1; j <= 3 && (i + j) < lines.length; j++) {
-                    const nextLine = lines[i + j];
-                    if (/^[A-Z0-9]{4}\d{10,15}/.test(nextLine)) {
-                      dataLine = nextLine;
-                      for (let k = 1; k < j; k++) description += ' ' + lines[i + k];
-                      break;
-                    }
-                  }
-                  
-                  if (dataLine) {
-                    let po_qty = 0, qty = 0, unit = 'KG', unit_price = 0, mrp = 0, total_amount = 0;
-                    const dataMatch = dataLine.match(/^[A-Z0-9]{4}\d{10,15}([\d,]+)\s+([\d,]+)(KG|PCS|NOS|EA)([\d\.]+)([\d\.]+)([\d\.]+)/i);
-                    
-                    if (dataMatch) {
-                      po_qty = parseFloat(dataMatch[1].replace(',', '.'));
-                      qty = parseFloat(dataMatch[2].replace(',', '.'));
-                      unit = dataMatch[3];
-                      const floats = [...dataLine.matchAll(/(\d+\.\d{2})/g)].map(m => parseFloat(m[1]));
-                      if (floats.length >= 3) {
-                        unit_price = floats[0]; mrp = floats[1]; total_amount = floats[2];
-                      }
-                    } else {
-                      const qtys = [...dataLine.matchAll(/([\d]+,[\d]{2})/g)].map(m => parseFloat(m[1].replace(',', '.')));
-                      if (qtys.length >= 2) { po_qty = qtys[0]; qty = qtys[1]; } else if (qtys.length === 1) qty = qtys[0];
-                      const unitMatch = dataLine.match(/(KG|PCS|NOS|EA)/i);
-                      if (unitMatch) unit = unitMatch[1];
-                      const floats = [...dataLine.matchAll(/(\d+\.\d{2})/g)].map(m => parseFloat(m[1]));
-                      if (floats.length >= 3) {
-                        unit_price = floats[0]; mrp = floats[1]; total_amount = floats[2];
-                      }
-                    }
-                    
-                    parsed.items.push({ description: description.trim(), qty, unit_price, total_amount, hsn_code, article_no, mrp, unit });
-                  }
-                }
-              }
               
               // Duplicate guard
               const isDuplicateLocal = async () => {

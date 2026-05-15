@@ -6,8 +6,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // with exponential backoff.
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 3,
-  baseDelayMs = 5000
+  maxRetries = 1,
+  baseDelayMs = 2000
 ): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -139,6 +139,8 @@ STAR Goods Receipt Slip:
 - Header: grn_no (Goods Receipt Slip No), grn_date (Goods Receipt Date), current_date, plant_code (Plant), plant_description (Receiving Plant description), plant_name (Receiving Plant Name and Code), company_pan (Company PAN), gstn (GSTN/UIN), vendor_code (Vendor code part before hyphen), vendor_name (Vendor name part after hyphen), vendor_address (Vendor Supply Address), supply_state (Supply State Name and Code), delivery_note (Delivery Note), vendor_inv_no (Vendor Inv No.), po_number (PO), header_text (Header Text), movement_type (Movement Type).
 - Items: Item → item_no, Article → article_no, Rev. Qty → qty, Unit Cost → cost_per_unit, MRP → mrp, Cost → total_amount, tax fields (CGST, SGST, CESS).
 - Root total_amount = the printed "Cost" column total row value.
+- CRITICAL: For STAR, "Cost" column (last column) is the final amount. NEVER multiply po_qty * unit_cost. Only use the Rev. Qty and Cost column exactly as printed.
+- For STAR: Handle comma as decimal separator in "Qty" columns (e.g. 500,00 becomes 500.0) but look for standard dots in the "Cost" columns.
 
 ZEPTO Invoice or Challan:
 - Header: challan_no is the Invoice Number / Invoice No printed at the top of the document (this is the PRIMARY unique identifier — ALWAYS extract it), challan_date is the Invoice Date converted to YYYY-MM-DD, vendor_name is the Supplier or Seller name on the document, vendor_code is the Supplier or Seller code if present, po_number is the PO Number or Order ID, vendor_inv_no is the Invoice Number if it differs from challan_no, billing_address is the Bill To address block, shipping_address is the Ship To or Delivery address block, gstn is the GSTIN of the supplier, currency is "INR" if not explicitly stated.

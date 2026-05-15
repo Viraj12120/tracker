@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { syncStarBillsFromGmail } from '@/lib/services/gmailService';
 import { triggerSync } from '@/lib/services/syncToProd';
-export const maxDuration = 60; 
+export const maxDuration = 300; 
 
 export async function POST() {
   try {

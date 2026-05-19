@@ -31,9 +31,9 @@ export async function GET(request: Request) {
       .join('bills', 'bill_items.bill_id', 'bills.id')
       .where('bills.status', '!=', 'deleted')
       .andWhere('bills.company', 'AMAZON')
-      .andWhere(function() {
+      .andWhere(function () {
         this.where('bill_items.description', 'like', '%1 kg%')
-            .orWhere('bill_items.description', 'like', '%1kg%');
+          .orWhere('bill_items.description', 'like', '%1kg%');
       });
 
     const amazonWeightResult = await amazonWeightQuery.sum('bill_items.qty as weight_kg').first();
@@ -47,13 +47,22 @@ export async function GET(request: Request) {
       .andWhere('bill_items.description', 'like', '%Fresh Kesar 1Pc Buying (Approx. 200g)%');
 
     const amazonKesarResult = await amazonKesarQuery.select(
-        db.raw('SUM(bill_items.qty * 0.02) as kesar_weight'),
-        db.raw('SUM(bill_items.qty) as kesar_qty')
-      )
+      db.raw('SUM(bill_items.qty * 0.02) as kesar_weight'),
+      db.raw('SUM(bill_items.qty) as kesar_qty')
+    )
       .first();
 
     const amazon_kesar_weight = (amazonKesarResult as any)?.kesar_weight || 0;
     const kesar_qty = (amazonKesarResult as any)?.kesar_qty || 0;
+
+    // 4. ZEPTO Weight
+    let zeptoWeightQuery = db('bill_items')
+      .join('bills', 'bill_items.bill_id', 'bills.id')
+      .where('bills.status', '!=', 'deleted')
+      .andWhere('bills.company', 'ZEPTO');
+    
+    const zeptoWeightResult = await zeptoWeightQuery.sum('bill_items.qty as weight_kg').first();
+    const zepto_weight = (zeptoWeightResult as any)?.weight_kg || 0;
 
     // Calculate Final Total based on active filter
     let final_weight = 0;
@@ -61,9 +70,11 @@ export async function GET(request: Request) {
       final_weight = Number(star_weight);
     } else if (company === 'AMAZON') {
       final_weight = Number(amazon_1kg_weight) + Number(amazon_kesar_weight);
+    } else if (company === 'ZEPTO') {
+      final_weight = Number(zepto_weight);
     } else {
       // ALL or other
-      final_weight = Number(star_weight) + Number(amazon_1kg_weight) + Number(amazon_kesar_weight);
+      final_weight = Number(star_weight) + Number(amazon_1kg_weight) + Number(amazon_kesar_weight) + Number(zepto_weight);
     }
 
     return NextResponse.json({
